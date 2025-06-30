@@ -1,22 +1,24 @@
 from flask import Flask, render_template, request, send_file
 from werkzeug.utils import secure_filename
-from flask_mysqldb import MySQL
+import psycopg2
 import os
 from certificate_generator import generate_certificate
-import config
 from send_mail import send_certificate
+import config
 
 app = Flask(__name__)
 app.secret_key = 'supersecret'
 app.config['UPLOAD_FOLDER'] = config.UPLOAD_FOLDER
 
-# MySQL Config
-app.config['MYSQL_HOST'] = config.MYSQL_HOST
-app.config['MYSQL_USER'] = config.MYSQL_USER
-app.config['MYSQL_PASSWORD'] = config.MYSQL_PASSWORD
-app.config['MYSQL_DB'] = config.MYSQL_DB
-
-mysql = MySQL(app)
+# PostgreSQL Connection Function
+def get_connection():
+    return psycopg2.connect(
+        host=config.DB_HOST,
+        database=config.DB_NAME,
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        port=config.DB_PORT
+    )
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -35,12 +37,18 @@ def index():
             logo.save(logo_path)
 
             # Save to DB
-            cur = mysql.connection.cursor()
-            cur.execute("""
-                INSERT INTO certificates (logo_path, name, course, start_date, end_date, email)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (logo_path, name, course, start_date, end_date, email))
-            mysql.connection.commit()
+            try:
+                conn = get_connection()
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO certificates (logo_path, name, course, start_date, end_date, email)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (logo_path, name, course, start_date, end_date, email))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as e:
+                return render_template('index.html', error="Database error: " + str(e), show_popup=True)
 
             # Generate PDF
             pdf_path = generate_certificate(logo_path, name, course, start_date, end_date)
