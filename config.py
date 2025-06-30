@@ -1,12 +1,14 @@
 import os
 
 UPLOAD_FOLDER = 'static/uploads'
+# config.py
 
-# MySQL Configuration (Use environment variables)
-MYSQL_HOST = os.environ.get('MYSQL_HOST')
-MYSQL_USER = os.environ.get('MYSQL_USER')
-MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD')
-MYSQL_DB = os.environ.get('MYSQL_DB')
+DB_HOST = 'RAILWAY_PRIVATE_DOMAIN'
+DB_PORT = 5432
+DB_NAME = 'POSTGRES_DB'
+DB_USER = 'POSTGRES_USER'
+DB_PASSWORD = 'POSTGRES_PASSWORD'
+
 
 # Email SMTP configuration
 MAIL_SERVER = 'smtp.gmail.com'
